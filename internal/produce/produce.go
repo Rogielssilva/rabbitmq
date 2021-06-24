@@ -1,6 +1,7 @@
 package main
 
 import (
+	"rabbitMq/internal"
 	"rabbitMq/internal/pgk"
 
 	"github.com/streadway/amqp"
@@ -8,17 +9,18 @@ import (
 
 func main() {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
-	pgk.HandleError(err, "error while setting up server")
+	internal.HandleError(err, "error while setting up server")
 
 	defer conn.Close()
 
 	channel, err := conn.Channel()
-	pgk.HandleError(err, "error while getting channel")
+	internal.HandleError(err, "error while getting channel")
 
 	defer channel.Close()
 
-	q := pgk.NewQueueInstance("test01", channel)
-	q.CreateQueue()
+	q := pgk.NewQueueInstance(channel, "test01", false)
+	_, err = q.CreateQueue()
+	internal.HandleError(err, "error to create a queue")
 	q.Publish("hello world!!")
 
 }

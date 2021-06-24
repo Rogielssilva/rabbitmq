@@ -1,43 +1,39 @@
 package pgk
 
 import (
-	"log"
 	"time"
 
 	"github.com/streadway/amqp"
 )
 
 type Queue struct {
-	name string
-	ch   *amqp.Channel
+	name    string
+	ch      *amqp.Channel
+	durable bool
 }
 
-func HandleError(err error, message string) {
-	if err != nil {
-		log.Fatalf("messge: %v error: %v\n", message, err)
-	}
-}
-
-func NewQueueInstance(name string, ch *amqp.Channel) *Queue {
-	return &Queue{name: name, ch: ch}
+func NewQueueInstance(ch *amqp.Channel, name string, durable bool) *Queue {
+	return &Queue{name: name, ch: ch, durable: durable}
 }
 
 func (q *Queue) CreateQueue() (amqp.Queue, error) {
-	return q.ch.QueueDeclare(q.name, false, false, false, false, nil)
+	return q.ch.QueueDeclare(q.name, q.durable, false, false, false, nil)
 }
 
-func (q *Queue) Consume() <-chan amqp.Delivery {
-	msgs, err := q.ch.Consume(q.name, "", true, false, false, false, nil)
-	HandleError(err, "error to consume message")
-	return msgs
+func (q *Queue) Consume(autoACk bool) (<-chan amqp.Delivery, error) {
+	return q.ch.Consume(q.name, "", autoACk, false, false, false, nil)
 }
 
-func (q *Queue) Publish(msg string) {
-	err := q.ch.Publish("", q.name, false, false, amqp.Publishing{
+func (q *Queue) QosConfig() error {
+	return q.ch.Qos(1, 0, false)
+}
+
+func (q *Queue) Publish(msg string) error {
+	return q.ch.Publish("", q.name, false, false, amqp.Publishing{
 		Headers:         nil,
 		ContentType:     "text/plain",
 		ContentEncoding: "",
-		DeliveryMode:    0,
+		DeliveryMode:    amqp.Persistent,
 		Priority:        0,
 		CorrelationId:   "",
 		ReplyTo:         "",
@@ -49,6 +45,4 @@ func (q *Queue) Publish(msg string) {
 		AppId:           "",
 		Body:            []byte(msg),
 	})
-
-	HandleError(err, "failed while publishing a message")
 }

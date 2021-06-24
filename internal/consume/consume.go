@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"rabbitMq/internal"
 	"rabbitMq/internal/pgk"
 
 	"github.com/streadway/amqp"
@@ -10,18 +11,21 @@ import (
 func main() {
 
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	pgk.HandleError(err, "failed while connecting to the server")
+	internal.HandleError(err, "failed while connecting to the server")
 	defer conn.Close()
 
 	channel, err := conn.Channel()
-	pgk.HandleError(err, "failed to create consume channel")
+	internal.HandleError(err, "failed to create consume channel")
 
 	defer conn.Close()
 
-	q := pgk.NewQueueInstance("test01", channel)
-	q.CreateQueue()
+	q := pgk.NewQueueInstance(channel, "test01", false)
+	_, err = q.CreateQueue()
+	internal.HandleError(err, "error to create a queue")
 
-	msgs := q.Consume()
+	msgs, err := q.Consume(true)
+	internal.HandleError(err, "error to consume message")
+
 	wait := make(chan bool)
 
 	go func() {
