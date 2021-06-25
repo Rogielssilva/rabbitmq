@@ -7,17 +7,19 @@ import (
 )
 
 type Queue struct {
-	name    string
-	ch      *amqp.Channel
-	durable bool
+	name      string
+	ch        *amqp.Channel
+	durable   bool
+	exclusive bool
+	exchange  string
 }
 
-func NewQueueInstance(ch *amqp.Channel, name string, durable bool) *Queue {
-	return &Queue{name: name, ch: ch, durable: durable}
+func NewQueueInstance(ch *amqp.Channel, name, exchange string, durable, exclusive bool) *Queue {
+	return &Queue{ch: ch, name: name, exchange: exchange, durable: durable, exclusive: exclusive}
 }
 
 func (q *Queue) CreateQueue() (amqp.Queue, error) {
-	return q.ch.QueueDeclare(q.name, q.durable, false, false, false, nil)
+	return q.ch.QueueDeclare(q.name, q.durable, false, q.exclusive, false, nil)
 }
 
 func (q *Queue) Consume(autoACk bool) (<-chan amqp.Delivery, error) {
@@ -29,7 +31,7 @@ func (q *Queue) QosConfig() error {
 }
 
 func (q *Queue) Publish(msg string) error {
-	return q.ch.Publish("", q.name, false, false, amqp.Publishing{
+	return q.ch.Publish(q.exchange, q.name, false, false, amqp.Publishing{
 		Headers:         nil,
 		ContentType:     "text/plain",
 		ContentEncoding: "",
@@ -45,4 +47,8 @@ func (q *Queue) Publish(msg string) error {
 		AppId:           "",
 		Body:            []byte(msg),
 	})
+}
+
+func (q *Queue) QueueBind() error {
+	return q.ch.QueueBind(q.name, "", q.exchange, false, nil)
 }

@@ -29,12 +29,20 @@ func main() {
 	channel, err := conn.Channel()
 	internal.HandleError(err, "error while getting channel")
 
-	q := pgk.NewQueueInstance(channel, "test02", "", false, false)
+	exName := "myexch"
+	e := pgk.NewExchange(channel)
+	err = e.CreateExchange(exName, "fanout", true)
+	internal.HandleError(err, "error to create exchange")
+
+	q := pgk.NewQueueInstance(channel, "", exName, true, true)
+	_, err = q.CreateQueue()
+	internal.HandleError(err, "error to create a queue")
+
+	err = q.QueueBind()
+	internal.HandleError(err, "error for biding")
 
 	b := bodyFrom(os.Args)
-
-	err = q.Publish(b)
-	internal.HandleError(err, "error to consume message")
+	err = e.PublishExchange(exName, b)
 
 	log.Printf("send %s", b)
 

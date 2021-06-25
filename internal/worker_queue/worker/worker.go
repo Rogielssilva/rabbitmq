@@ -20,7 +20,7 @@ func main() {
 	channel, err := conn.Channel()
 	internal.HandleError(err, "error while getting channel")
 
-	q := pgk.NewQueueInstance(channel, "test02", true)
+	q := pgk.NewQueueInstance(channel, "test02", "", false, true)
 
 	_, err = q.CreateQueue()
 	internal.HandleError(err, "error to create queue")

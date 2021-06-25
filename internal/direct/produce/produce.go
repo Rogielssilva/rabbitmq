@@ -18,9 +18,8 @@ func main() {
 
 	defer channel.Close()
 
-	q := pgk.NewQueueInstance(channel, "test01", false)
+	q := pgk.NewQueueInstance(channel, "test01", "", false, false)
 	_, err = q.CreateQueue()
 	internal.HandleError(err, "error to create a queue")
 	q.Publish("hello world!!")
-
 }
