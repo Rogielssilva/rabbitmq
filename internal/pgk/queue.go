@@ -49,6 +49,6 @@ func (q *Queue) Publish(msg string) error {
 	})
 }
 
-func (q *Queue) QueueBind() error {
-	return q.ch.QueueBind(q.name, "", q.exchange, false, nil)
+func (q *Queue) QueueBind(route string) error {
+	return q.ch.QueueBind(q.name, route, q.exchange, false, nil)
 }
